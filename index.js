@@ -1,45 +1,39 @@
-// these should be configurable
-const directory = ''
-const yearFilter = '2012'
-
-// load config from `.env` file
-require('dotenv').config()
-
 const fs = require('fs')
 const path = require('path')
-const _ = require('./rate_limit')
-const Twitter = require('twitter')
+const program = require('commander')
+const tweetDelete = require('./twitter')
 
-const client = new Twitter({
-    consumer_key: process.env.CONSUMER_KEY,
-    consumer_secret: process.env.CONSUMER_SECRET,
-    access_token_key: process.env.ACCESS_KEY,
-    access_token_secret: process.env.ACCESS_SECRET
-})
+program
+    .usage('<path to tweet data> [options]')
+    .option('--year <year>', 'year to delete')
+    .option('--month <month>', 'month to delete')
+    .parse(process.argv)
+
+if (program.args[0] == null) {
+    throw new Error('Tweet directory must be specified')
+}
+
+if (program.year == null || typeof program.year !== 'string') {
+    throw new Error('Year must be specified for deletion')
+}
+
 
 // this is where tweets get loaded into
 Grailbird = { data: {} }
 
-// throttle requests to 1 per second
-const throttledDelete = _.rateLimit((tweet) => {
-    if (tweet.retweeted_status) {
-        return client.post(`statuses/unretweet/${tweet.id}.json`, (error, response) => {
-            console.log('unretweeted:', tweet.text)
-        })
-    } else {
-        client.post(`statuses/destroy/${tweet.id}.json`, (error, response) => {
-            console.log('deleted:', tweet.text)
-        })
-    }
-}, 1000)
-
+const directory = program.args[0]
 fs.readdir(directory, (err, files) => {
     if (err != null) {
         throw err
     }
 
+    let filter = program.year
+    if (program.month != null && typeof program.month === 'string') {
+        filter += `_${program.month}`
+    }
+
     files.forEach((filename) => {
-        if (filename.indexOf('.js') === -1) {
+        if (filename.indexOf(filter) === -1) {
             return
         }
 
@@ -48,13 +42,8 @@ fs.readdir(directory, (err, files) => {
     })
 
     const months = Object.keys(Grailbird.data)
-    
     months.forEach((month) => {
-        if (month.indexOf(`tweets_${yearFilter}`) !== 0) {
-            return
-        }
-
         const tweets = Grailbird.data[month]
-        tweets.forEach(throttledDelete)
+        tweets.forEach(tweetDelete)
     })
 })
