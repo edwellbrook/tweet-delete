@@ -12,13 +12,15 @@ const client = new Twitter({
 })
 
 module.exports = _.rateLimit((tweet) => {
+    const id = tweet.id_str
+
     if (tweet.retweeted_status) {
-        client.post(`statuses/unretweet/${tweet.id}.json`, (error, response) => {
+        client.post(`statuses/unretweet/${id}.json`, (error, response) => {
             if (error != null) { return console.error(error[0].message) }
             console.log('unretweeted:', tweet.text)
         })
     } else {
-        client.post(`statuses/destroy/${tweet.id}.json`, (error, response) => {
+        client.post(`statuses/destroy/${id}.json`, (error, response) => {
             if (error != null) { return console.error(error[0].message) }
             console.log('deleted:', tweet.text)
         })
