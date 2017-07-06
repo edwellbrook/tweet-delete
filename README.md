@@ -9,7 +9,7 @@ A super simple cli for deleting months/years of tweets using your Twitter archiv
   3. From inside the project run:
 
 ```shell
-./tweet-delete /path/to/twitter/data/js --year=2010 --month=02
+./bin/tweet-delete /path/to/twitter/data/js --year=2010 --month=02
 ```
 
 ## License
